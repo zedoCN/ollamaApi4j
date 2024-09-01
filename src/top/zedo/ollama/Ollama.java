@@ -1,8 +1,8 @@
 package top.zedo.ollama;
 
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
+import com.google.gson.annotations.SerializedName;
+
+import java.util.*;
 
 public class Ollama {
 
@@ -12,7 +12,7 @@ public class Ollama {
          */
         public String model;
         /**
-         *创建于时间
+         * 创建于时间
          */
         public String created_at;
         /**
@@ -56,6 +56,157 @@ public class Ollama {
          */
         public List<Integer> context;
     }
+
+    public static class Tool {
+        /**
+         * 工具类型
+         */
+        public String type = "function";
+        /**
+         * 工具功能
+         */
+        public Function function;
+
+        /**
+         * @param type     工具类型 function
+         * @param function 函数
+         */
+        public Tool(String type, Function function) {
+            this.type = type;
+            this.function = function;
+        }
+
+        /**
+         * 函数工具
+         *
+         * @param name        函数名
+         * @param description 函数描述
+         * @param type        函数参数类型
+         * @param required    必要参数名
+         */
+        public Tool(String name, String description, String type, String... required) {
+            this.type = type;
+            this.function = new Function(name, description, type, required);
+        }
+
+        /**
+         * 增加函数参数属性
+         *
+         * @param name        参数名
+         * @param type        参数类型
+         * @param description 参数描述
+         * @param enumValues  参数可选值
+         */
+        public void addProperty(String name, String type, String description, String... enumValues) {
+            function.parameters.addProperty(name, type, description, enumValues);
+        }
+
+        /**
+         * 工具
+         */
+        public static class Function {
+            /**
+             * 函数名
+             */
+            public String name;
+            /**
+             * 函数描述
+             */
+            public String description;
+            /**
+             * 函数接受的参数
+             */
+            public Parameters parameters;
+
+            /**
+             * @param name        函数名
+             * @param description 函数描述
+             * @param type        函数参数类型  object
+             * @param required    必要参数名
+             */
+            public Function(String name, String description, String type, String... required) {
+                this.name = name;
+                this.description = description;
+                parameters = new Parameters(type, required);
+            }
+
+            /**
+             * 增加参数属性
+             *
+             * @param name        参数名
+             * @param type        参数类型
+             * @param description 参数描述
+             * @param enumValues  参数可选值
+             */
+            public void addProperty(String name, String type, String description, String... enumValues) {
+                parameters.addProperty(name, type, description, enumValues);
+            }
+
+            /**
+             * 函数接受的参数
+             */
+            public static class Parameters {
+
+                /**
+                 * 参数的类型
+                 */
+                public String type = "object";
+                /**
+                 * 函数所需的具体参数
+                 */
+                public Map<String, Property> properties;
+                /**
+                 * 函数调用时必须提供的参数
+                 */
+                public List<String> required;
+
+                public Parameters(String type, String... required) {
+                    this.type = type;
+                    properties = new HashMap<>();
+                    this.required = List.of(required);
+                }
+
+
+                /**
+                 * 增加参数属性
+                 *
+                 * @param name        参数名
+                 * @param type        参数类型
+                 * @param description 参数描述
+                 * @param enumValues  参数可选值
+                 */
+                public void addProperty(String name, String type, String description, String... enumValues) {
+                    properties.put(name, new Property(type, description, List.of(enumValues)));
+                }
+
+                /**
+                 * 参数属性
+                 */
+                public static class Property {
+                    /**
+                     * 参数的类型 string
+                     */
+                    public String type;
+                    /**
+                     * 参数的描述
+                     */
+                    public String description;
+                    /**
+                     * 参数的可选值
+                     */
+                    @SerializedName("enum")
+                    public List<String> enumValues;
+
+                    public Property(String type, String description, List<String> enumValues) {
+                        this.type = type;
+                        this.description = description;
+                        this.enumValues = enumValues;
+                    }
+                }
+            }
+        }
+    }
+
 
     public static class ChatMessage extends BaseMessage {
         public Message message;
@@ -316,15 +467,33 @@ public class Ollama {
         }
     }
 
+    public static class ToolCall {
+        public Function function;
+
+        public static class Function {
+            public String name;
+            public Map<String, String> arguments;
+        }
+    }
+
     public static class Message {
         private final String role;
         private final String content;
         private final List<String> images;
+        private final List<ToolCall> tool_calls;
+
+        public Message(String role, String content, List<ToolCall> tool_calls) {
+            this.role = role;
+            this.content = content;
+            this.tool_calls = tool_calls;
+            images = null;
+        }
 
         public Message(String role, String content) {
             this.role = role;
             this.content = content;
             images = null;
+            tool_calls = null;
         }
 
         public Message(String role, String content, byte[]... images) {
@@ -334,6 +503,11 @@ public class Ollama {
             for (byte[] img : images) {
                 this.images.add(Base64.getEncoder().encodeToString(img));
             }
+            tool_calls = null;
+        }
+
+        public List<ToolCall> getToolCalls() {
+            return tool_calls;
         }
 
         @Override

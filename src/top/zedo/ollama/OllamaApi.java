@@ -15,6 +15,8 @@ import java.util.Base64;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class OllamaApi {
     private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
@@ -155,7 +157,7 @@ public class OllamaApi {
      * 对话补全
      * 使用所提供的模型生成聊天中的下一条消息。
      */
-    public CompletableFuture<Void> chat(ChatMessageCallback callback, Ollama.Options options, String template, String model, String keepAlive, Ollama.MessageHistory history) {
+    public CompletableFuture<Void> chat(ChatMessageCallback callback, Ollama.Options options, String template, String model, String keepAlive, Ollama.MessageHistory history, List<Ollama.Tool> tools) {
         JsonObject json = new JsonObject();
         json.addProperty("model", model);
         if (options != null)
@@ -166,6 +168,10 @@ public class OllamaApi {
             json.addProperty("keep_alive", keepAlive);
         TypeToken<List<Ollama.Message>> listTypeToken = new TypeToken<>() {
         };
+        if (tools != null) {
+            json.add("tools", gson.toJsonTree(tools));
+            json.addProperty("stream", false);
+        }
         json.add("messages", gson.toJsonTree(history, listTypeToken.getType()));
 
         StringBuilder stringBuilder = new StringBuilder();
@@ -176,8 +182,8 @@ public class OllamaApi {
                 stringBuilder.append(chatMessage[0].message.getContent());
                 callback.onMessage(stringBuilder.toString(), chatMessage[0]);
             } else {
-                callback.onDone(stringBuilder.toString(), chatMessage[0]);
                 history.addAssistant(stringBuilder.toString());
+                callback.onDone(stringBuilder.toString(), chatMessage[0]);
             }
         });
     }
@@ -227,19 +233,97 @@ public class OllamaApi {
         /**
          * 生成消息
          *
-         * @param message         已生成的消息
-         * @param generateMessage 生成消息片段
+         * @param message     已生成的消息
+         * @param chatMessage 生成消息片段
          */
-        void onMessage(String message, Ollama.ChatMessage generateMessage);
+        void onMessage(String message, Ollama.ChatMessage chatMessage);
 
         /**
          * 生成消息完成
          *
-         * @param message         完整的消息
-         * @param generateMessage 生成消息片段
+         * @param message     完整的消息
+         * @param chatMessage 生成消息片段
          */
-        void onDone(String message, Ollama.ChatMessage generateMessage);
+        void onDone(String message, Ollama.ChatMessage chatMessage);
     }
+
+
+    /**
+     * 分隔消息内容
+     */
+    public static abstract class SeparateMessage implements ChatMessageCallback, GenerateMessageCallback {
+        private final StringBuilder sb = new StringBuilder();
+        private final Pattern pattern;
+        private final int minLength;
+
+        public SeparateMessage(int minLength, String... delimiters) {
+            this.minLength = minLength;
+            pattern = Pattern.compile("[" + String.join("", delimiters) + "]");
+        }
+
+        @Override
+        public final void onMessage(String message, Ollama.ChatMessage chatMessage) {
+            sb.append(chatMessage.message.getContent());
+            handle();
+        }
+
+        private void handle() {
+            String text = sb.toString();
+            if (text.isEmpty())
+                return;
+            Matcher matcher = pattern.matcher(text);
+            int lastIndex = 0;
+
+            while (matcher.find()) {
+                int index = matcher.start() + 1;
+                String content = text.substring(0, index);
+
+                // 检查是否满足最小长度要求
+                if (content.length() >= minLength) {
+                    sb.delete(0, index);
+                    onSeparateMessage(content);
+                    lastIndex = index; // 更新最后分隔符的位置
+                }
+            }
+
+            // 如果所有匹配都不满足minLength要求，且最后有剩余的内容，但又没有更长的匹配，更新sb
+            if (lastIndex > 0) {
+                sb.delete(0, lastIndex);
+            }
+        }
+
+        @Override
+        public final void onDone(String message, Ollama.ChatMessage chatMessage) {
+            if (!sb.isEmpty()) {
+                onSeparateMessage(sb.toString());
+                sb.setLength(0);
+            }
+
+            onDone(chatMessage);
+        }
+
+        @Override
+        public final void onMessage(String message, Ollama.GenerateMessage generateMessage) {
+            sb.append(generateMessage.response);
+
+            handle();
+        }
+
+        @Override
+        public final void onDone(String message, Ollama.GenerateMessage generateMessage) {
+            if (!sb.isEmpty()) {
+                onSeparateMessage(sb.toString());
+                sb.setLength(0);
+            }
+
+            onDone(generateMessage);
+        }
+
+        public abstract void onSeparateMessage(String separateMessage);
+
+        public abstract void onDone(Ollama.BaseMessage generateMessage);
+    }
+
 
     /**
      * 打印生成消息
@@ -257,14 +341,21 @@ public class OllamaApi {
         }
 
         @Override
-        public void onMessage(String message, Ollama.ChatMessage generateMessage) {
-            System.out.print(generateMessage.message.getContent());
+        public void onMessage(String message, Ollama.ChatMessage chatMessage) {
+            System.out.print(chatMessage.message.getContent());
             System.out.flush();
         }
 
         @Override
-        public void onDone(String message, Ollama.ChatMessage generateMessage) {
-            System.out.format(" ❖(%.2f token/s)\n", generateMessage.getTokenSpeed());
+        public void onDone(String message, Ollama.ChatMessage chatMessage) {
+            var toolCalls = chatMessage.message.getToolCalls();
+            if (toolCalls != null) {
+                for (var tool : toolCalls) {
+                    System.out.print("\t[" + tool.function.name + " " + tool.function.arguments + "]\t");
+                    System.out.flush();
+                }
+            }
+            System.out.format(" ❖(%.2f token/s)\n", chatMessage.getTokenSpeed());
         }
     }
 
