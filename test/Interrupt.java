@@ -24,7 +24,7 @@ public class Interrupt {
             public void onDone(Ollama.BaseMessage generateMessage) {
 
             }
-        }, new Ollama.Options().setTemperature(0.4f).setNum_thread(16).setSeed(new Random().nextInt()), null, "yi:34b", "120h", history, null);
+        }, new Ollama.Options().setTemperature(0.4f).setNum_thread(16).setSeed(new Random().nextInt()), null, "minicpm-v:latest", "120h", history, null);
         while (!future.isDone()) {
             Thread.sleep(1000);
         }

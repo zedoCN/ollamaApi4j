@@ -9,13 +9,13 @@ public class Chat {
     private static final OllamaApi api = new OllamaApi();
     private static final Ollama.MessageHistory history = new Ollama.MessageHistory();
     private static final Scanner scanner = new Scanner(System.in);
-    private static String modelName = "glm4:latest";
+    private static String modelName = "qwen2.5:7b";
 
     /**
      * 测试聊天
      */
     public static void main(String[] args) throws ExecutionException, InterruptedException {
-        api.setHostURL("http://127.0.0.1:11434");
+        api.setHostURL("http://h.zedo.top:11434");
         while (true) {
             System.out.print("User: ");
             String line = scanner.nextLine();
@@ -50,7 +50,7 @@ public class Chat {
                 history.addUser(line);
                 System.out.print("AI: ");
                 //推理并等待
-                api.chat(new OllamaApi.PrintGenerateMessage(), new Ollama.Options().setLow_vram(true), null, modelName, "120h", history,null).get();
+                api.chat(new OllamaApi.PrintGenerateMessage(), new Ollama.Options(), null, modelName, "120h", history,null).get();
             }
         }
     }

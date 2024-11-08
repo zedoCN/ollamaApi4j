@@ -97,8 +97,9 @@ public class Ollama {
          * @param description 参数描述
          * @param enumValues  参数可选值
          */
-        public void addProperty(String name, String type, String description, String... enumValues) {
+        public Tool addProperty(String name, String type, String description, String... enumValues) {
             function.parameters.addProperty(name, type, description, enumValues);
+            return this;
         }
 
         /**
@@ -220,76 +221,98 @@ public class Ollama {
         /**
          * 启用 Mirostat 采样以控制复杂度。（默认：0，0=禁用，1=Mirostat，2=Mirostat 2.0）
          */
-        public int mirostat = 0;
+        public Integer mirostat = null;
+
         /**
          * 影响算法响应生成文本反馈的速度。较低的学习率将导致调整速度较慢，而较高的学习率将使算法更具响应性。（默认：0.1）
          */
-        public float mirostat_eta = 0.1f;
+        public Float mirostat_eta = null;
+
         /**
          * 控制输出的一致性与多样性之间的平衡。较低的值将导致文本更加集中和一致。（默认：5.0）
          */
-        public float mirostat_tau = 5.f;
+        public Float mirostat_tau = null;
+
         /**
          * 设置用于生成下一个令牌的上下文窗口大小。（默认：2048）
          */
-        public int num_ctx = 2048;
+        public Integer num_ctx = null;
+
         /**
          * 设置模型向后查看的距离，以防止重复。（默认：64，0=禁用，-1=num_ctx）
          */
-        public int repeat_last_n = 64;
+        public Integer repeat_last_n = null;
+
         /**
          * 设置对重复的惩罚强度。较高的值（例如 1.5）将更强烈地惩罚重复，而较低的值（例如 0.9）将更宽容。（默认：1.1）
          */
-        public float repeat_penalty = 1.1f;
+        public Float repeat_penalty = null;
+
         /**
          * 模型的温度。增加温度将使模型回答更具创造性。（默认：0.8）
          */
-        public float temperature = 0.8f;
+        public Float temperature = null;
+
         /**
-         * 设置用于生成的随机数种子。将此设置为特定数字将使模型对同一提示生成相同的文本。（默认：0）
+         * 设置用于生成的随机数种子。将此设置为特定数字将使模型对同一提示生成相同的文本。（默认：随机）
          */
-        public int seed = 0;
+        public Integer seed = null;
+
         /**
          * 设置用于停止的序列。当遇到此模式时，ollama.LLM 将停止生成文本并返回。可以通过在 modelfile 中指定多个单独的 stop 参数来设置多个停止模式。
          */
         public String stop = null;
+
         /**
          * 尾部自由采样用于减少输出中不太可能的令牌的影响。较高的值（例如 2.0）将更多地减少影响，而值为 1.0 时禁用此设置。（默认：1）
          */
-        public float tfs_z = 1f;
+        public Float tfs_z = null;
+
         /**
          * 生成文本时预测的最大令牌数。（默认：128，-1=无限生成，-2=填充上下文）
          */
-        public int num_predict = 128;
+        public Integer num_predict = null;
+
         /**
          * 降低生成无意义文本的概率。较高的值（例如 100）将提供更多样的回答，而较低的值（例如 10）将更为保守。（默认：40）
          */
-        public int top_k = 40;
+        public Integer top_k = null;
+
         /**
          * 与 top-k 一起工作。较高的值（例如 0.95）将导致文本更多样化，而较低的值（例如 0.5）将生成更集中和保守的文本。（默认：0.9）
          */
-        public float top_p = 0.9f;
+        public Float top_p = null;
+
+        /**
+         * 与 top_p 的替代参数，确保质量和多样性。p 表示相对最可能令牌的最小概率。（默认：0.0）
+         */
+        public Float min_p = null;
+
+        /**
+         * 使用的线程数量，0表示自动（默认：0）
+         */
+        public Integer num_thread = null;
+
+        /**
+         * 使用的 GPU 数量。（默认：1）
+         */
+        public Integer num_gpu = null;
+
+        /**
+         * 主要使用的 GPU。（默认：0）
+         */
+        public Integer main_gpu = null;
+
+        /**
+         * 是否启用低显存模式，适用于显存有限的 GPU。（默认：false）
+         */
+        public Boolean low_vram = null;
 
 
         /**
-         * 使用的线程数量
-         */
-        public int num_thread = 16;
-        /**
-         * 使用的gpu数量
-         */
-        public int num_gpu = 1;
-        /**
-         * 主要的gpu
-         */
-        public int main_gpu = 0;
-        /**
-         * 低显存
-         */
-        public boolean low_vram = false;
-
-        /**
-         * 设置低显存
+         * 设置低显存模式（适用于显存有限的 GPU）。
+         *
+         * @param low_vram 是否启用低显存模式
          */
         public Options setLow_vram(boolean low_vram) {
             this.low_vram = low_vram;
@@ -297,7 +320,9 @@ public class Ollama {
         }
 
         /**
-         * 使用的gpu数量
+         * 设置使用的 GPU 数量。
+         *
+         * @param num_gpu 使用的 GPU 数量
          */
         public Options setNum_gpu(int num_gpu) {
             this.num_gpu = num_gpu;
@@ -305,7 +330,9 @@ public class Ollama {
         }
 
         /**
-         * 主要的gpu
+         * 设置主要使用的 GPU。
+         *
+         * @param main_gpu 主要 GPU 的编号
          */
         public Options setMain_gpu(int main_gpu) {
             this.main_gpu = main_gpu;
@@ -313,7 +340,9 @@ public class Ollama {
         }
 
         /**
-         * 使用的线程数量
+         * 设置使用的线程数量。0 表示自动选择线程数。
+         *
+         * @param num_thread 使用的线程数量
          */
         public Options setNum_thread(int num_thread) {
             this.num_thread = num_thread;
@@ -321,7 +350,10 @@ public class Ollama {
         }
 
         /**
-         * 启用 Mirostat 采样以控制复杂度。（默认：0，0=禁用，1=Mirostat，2=Mirostat 2.0）
+         * 设置启用 Mirostat 采样的模式以控制复杂度。
+         * 启用Mirostat采样以控制困惑度。（默认：0, 0 = 禁用, 1 = Mirostat, 2 = Mirostat 2.0）
+         *
+         * @param mirostat Mirostat 采样模式（0 = 禁用，1 = Mirostat，2 = Mirostat 2.0）
          */
         public Options setMirostat(int mirostat) {
             this.mirostat = mirostat;
@@ -329,7 +361,10 @@ public class Ollama {
         }
 
         /**
-         * 影响算法响应生成文本反馈的速度。较低的学习率将导致调整速度较慢，而较高的学习率将使算法更具响应性。（默认：0.1）
+         * 设置算法响应生成文本反馈的速度。较高的学习率使算法更具响应性。
+         * 影响算法响应生成文本反馈的速度。较低的学习率使调整较慢，较高的学习率会使算法更快响应。（默认：0.1）
+         *
+         * @param mirostat_eta 学习率
          */
         public Options setMirostat_eta(float mirostat_eta) {
             this.mirostat_eta = mirostat_eta;
@@ -337,7 +372,10 @@ public class Ollama {
         }
 
         /**
-         * 控制输出的一致性与多样性之间的平衡。较低的值将导致文本更加集中和一致。（默认：5.0）
+         * 设置输出的一致性与多样性之间的平衡，较低的值使文本更加集中。
+         * 控制输出的连贯性与多样性之间的平衡。较低的值生成的文本更聚焦连贯。（默认：5.0）
+         *
+         * @param mirostat_tau 输出一致性与多样性的平衡值
          */
         public Options setMirostat_tau(float mirostat_tau) {
             this.mirostat_tau = mirostat_tau;
@@ -345,7 +383,10 @@ public class Ollama {
         }
 
         /**
-         * 设置用于生成下一个令牌的上下文窗口大小。（默认：2048）
+         * 设置用于生成下一个令牌的上下文窗口大小。
+         * 设置用于生成下一个词元的上下文窗口大小。（默认：2048）
+         *
+         * @param num_ctx 上下文窗口大小
          */
         public Options setNum_ctx(int num_ctx) {
             this.num_ctx = num_ctx;
@@ -353,7 +394,10 @@ public class Ollama {
         }
 
         /**
-         * 设置模型向后查看的距离，以防止重复。（默认：64，0=禁用，-1=num_ctx）
+         * 设置模型向后查看的距离，以防止重复。
+         * 设置模型防止重复时回溯的距离。（默认：64, 0 = 禁用, -1 = num_ctx）
+         *
+         * @param repeat_last_n 模型查看的距离
          */
         public Options setRepeat_last_n(int repeat_last_n) {
             this.repeat_last_n = repeat_last_n;
@@ -361,7 +405,10 @@ public class Ollama {
         }
 
         /**
-         * 设置对重复的惩罚强度。较高的值（例如 1.5）将更强烈地惩罚重复，而较低的值（例如 0.9）将更宽容。（默认：1.1）
+         * 设置对重复的惩罚强度。较高的值更强烈地惩罚重复。
+         * 设置重复惩罚的强度。较高的值（例如1.5）会更强烈地惩罚重复，而较低的值（例如0.9）会较为宽松。（默认：1.1）
+         *
+         * @param repeat_penalty 对重复的惩罚强度
          */
         public Options setRepeat_penalty(float repeat_penalty) {
             this.repeat_penalty = repeat_penalty;
@@ -369,7 +416,10 @@ public class Ollama {
         }
 
         /**
-         * 模型的温度。增加温度将使模型回答更具创造性。（默认：0.8）
+         * 设置模型的温度值。增加温度使模型的回答更具创造性。
+         * 模型的温度值。提高温度会使模型生成更具创意的回答。（默认：0.8）
+         *
+         * @param temperature 模型温度
          */
         public Options setTemperature(float temperature) {
             this.temperature = temperature;
@@ -377,7 +427,10 @@ public class Ollama {
         }
 
         /**
-         * 设置用于生成的随机数种子。将此设置为特定数字将使模型对同一提示生成相同的文本。（默认：0）
+         * 设置生成的随机数种子，确保对相同提示生成相同的文本。
+         * 设置生成的随机数种子。设定特定数值将使模型在相同的提示下生成相同的文本。（默认：0）
+         *
+         * @param seed 随机数种子
          */
         public Options setSeed(int seed) {
             this.seed = seed;
@@ -385,7 +438,10 @@ public class Ollama {
         }
 
         /**
-         * 设置用于停止的序列。当遇到此模式时，ollama.LLM 将停止生成文本并返回。可以通过在 modelfile 中指定多个单独的 stop 参数来设置多个停止模式。
+         * 设置用于停止的序列。当遇到此模式时，生成过程将停止。
+         * 设置停止序列。当遇到此模式时，LLM将停止生成文本并返回结果。可以通过在模型文件中设置多个stop参数来指定多个停止模式。
+         *
+         * @param stop 停止序列
          */
         public Options setStop(String stop) {
             this.stop = stop;
@@ -393,7 +449,10 @@ public class Ollama {
         }
 
         /**
-         * 尾部自由采样用于减少输出中不太可能的令牌的影响。较高的值（例如 2.0）将更多地减少影响，而值为 1.0 时禁用此设置。（默认：1）
+         * 设置尾部自由采样的参数，用于减少低概率令牌的影响。
+         * 尾部自由采样用于减少低概率词元的影响。较高的值（例如2.0）会更大程度减少影响，而1.0则禁用此设置。（默认：1）
+         *
+         * @param tfs_z 尾部自由采样的参数
          */
         public Options setTfs_z(float tfs_z) {
             this.tfs_z = tfs_z;
@@ -401,7 +460,10 @@ public class Ollama {
         }
 
         /**
-         * 生成文本时预测的最大令牌数。（默认：128，-1=无限生成，-2=填充上下文）
+         * 设置生成文本时预测的最大令牌数。
+         * 设置生成文本时要预测的最大词元数。（默认：128, -1 = 无限生成, -2 = 填满上下文）
+         *
+         * @param num_predict 最大令牌数
          */
         public Options setNum_predict(int num_predict) {
             this.num_predict = num_predict;
@@ -409,7 +471,10 @@ public class Ollama {
         }
 
         /**
-         * 降低生成无意义文本的概率。较高的值（例如 100）将提供更多样的回答，而较低的值（例如 10）将更为保守。（默认：40）
+         * 设置生成文本时的 Top-K 值，控制样本的多样性。
+         * 降低生成无意义文本的概率。较高的值（如100）会生成更为多样的回答，而较低的值（如10）则更保守。（默认：40）
+         *
+         * @param top_k Top-K 值
          */
         public Options setTop_k(int top_k) {
             this.top_k = top_k;
@@ -417,26 +482,36 @@ public class Ollama {
         }
 
         /**
-         * 与 top-k 一起工作。较高的值（例如 0.95）将导致文本更多样化，而较低的值（例如 0.5）将生成更集中和保守的文本。（默认：0.9）
+         * 设置与 Top-K 一起工作的 Top-P 值，控制样本的多样性。
+         * 与top-k参数配合使用。较高的值（如0.95）会生成更为多样的文本，而较低的值（如0.5）会生成更聚焦保守的文本。（默认：0.9）
+         *
+         * @param top_p Top-P 值
          */
         public Options setTop_p(float top_p) {
             this.top_p = top_p;
             return this;
         }
-    }
 
+        /**
+         * 设置最小概率值，用于控制文本的质量和多样性。
+         * 与top_p的替代参数，旨在平衡质量与多样性。参数p表示相对于最高概率词元的最小概率。例如，p=0.05时，若最高概率词元为0.9，则低于0.045的词元会被过滤掉。
+         *
+         * @param min_p 最小概率值
+         */
+        public Options setMin_p(float min_p) {
+            this.min_p = min_p;
+            return this;
+        }
+    }
 
     public static class MessageHistory extends ArrayList<Message> {
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < size(); i++) {
-                if (i == 0)
-                    sb.append("┌");
-                else if (i == size() - 1)
-                    sb.append("└");
-                else
-                    sb.append("├");
+                if (i == 0) sb.append("┌");
+                else if (i == size() - 1) sb.append("└");
+                else sb.append("├");
                 sb.append(get(i).toString()).append("\n");
             }
             return sb.toString();

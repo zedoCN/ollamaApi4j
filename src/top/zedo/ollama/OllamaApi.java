@@ -173,7 +173,6 @@ public class OllamaApi {
             json.addProperty("stream", false);
         }
         json.add("messages", gson.toJsonTree(history, listTypeToken.getType()));
-
         StringBuilder stringBuilder = new StringBuilder();
         final Ollama.ChatMessage[] chatMessage = new Ollama.ChatMessage[1];
         return httpPostAsync("/api/chat", json, jsonResponse -> {
@@ -333,6 +332,7 @@ public class OllamaApi {
         @Override
         public void onMessage(String message, Ollama.GenerateMessage generateMessage) {
             System.out.print(generateMessage.response);
+            System.out.flush();
         }
 
         @Override
